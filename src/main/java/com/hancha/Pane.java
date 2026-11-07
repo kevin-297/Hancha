@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 
 public class Pane extends JPanel implements KeyListener {
@@ -29,6 +30,7 @@ public class Pane extends JPanel implements KeyListener {
 
     private volatile DIRECTION dir=DIRECTION.RIGHT;
     private volatile DIRECTION nextDir=DIRECTION.RIGHT;
+
     private Point appleLoc =null;
 
     public Pane(){
@@ -48,7 +50,6 @@ public class Pane extends JPanel implements KeyListener {
         addKeyListener(this);
         setOpaque(true);
         setFocusable(true);
-        requestFocusInWindow();
         setBackground(Color.black);
     }
 
@@ -82,29 +83,33 @@ public class Pane extends JPanel implements KeyListener {
 
         dir=nextDir;
 
-        int HeadX=snake.getFirst().x;
-        int HeadY=snake.getFirst().y;
+        int headX=snake.getFirst().x;
+        int headY =snake.getFirst().y;
 
-        HeadX+=dir.equals(DIRECTION.RIGHT)?1:dir.equals(DIRECTION.LEFT)?-1:0;
-        HeadY+=dir.equals(DIRECTION.DOWN)?1:dir.equals(DIRECTION.UP)?-1:0;
+        headX+=dir.equals(DIRECTION.RIGHT)?1:dir.equals(DIRECTION.LEFT)?-1:0;
+        headY +=dir.equals(DIRECTION.DOWN)?1:dir.equals(DIRECTION.UP)?-1:0;
 
-        HeadX+=(HeadX<0)?WIDTH:0;
-        HeadY+=(HeadY<0)?HEIGHT:0;
+        headX+=(headX<0)?WIDTH:0;
+        headY +=(headY <0)?HEIGHT:0;
 
-        HeadX%=WIDTH;
-        HeadY%=HEIGHT;
+        headX%=WIDTH;
+        headY %=HEIGHT;
 
-        Point head=new Point(HeadX,HeadY);
+        Point head=new Point(headX, headY);
 
-        if(detectCollision()) return;
+        synchronized (snake) {
 
-        if(!head.equals(appleLoc))
-            snake.removeLast();
-        else
-            spawnApple();
+            boolean ate=head.equals(appleLoc);
 
-        snake.addFirst(head);
+            if (detectCollision(head,ate)) return;
 
+            snake.addFirst(head);
+
+            if (ate)
+                spawnApple();
+            else
+                snake.removeLast();
+        }
     }
 
     @Override
@@ -118,24 +123,29 @@ public class Pane extends JPanel implements KeyListener {
             }
         }
 
-        g.setColor(SNAKE_COLOR);
-        for(Point p:snake)
-            g.fillRect(p.x*CELL_SIZE,p.y*CELL_SIZE,CELL_SIZE,CELL_SIZE);
+        synchronized (snake) {
+            g.setColor(SNAKE_COLOR);
+            for (Point p : snake)
+                g.fillRect(p.x * CELL_SIZE, p.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 
-        g.setColor(APPLE_COLOR);
-        if(appleLoc !=null)
-            g.fillOval(appleLoc.x*CELL_SIZE, appleLoc.y*CELL_SIZE,CELL_SIZE,CELL_SIZE);
-
+            g.setColor(APPLE_COLOR);
+            if (appleLoc != null)
+                g.fillOval(appleLoc.x * CELL_SIZE, appleLoc.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+        }
     }
 
     private void spawnApple(){
-        int x=appleGen.nextInt(0,WIDTH);
-        int y=appleGen.nextInt(0,HEIGHT);
-
-        appleLoc =new Point(x,y);
+        do {
+            int x = appleGen.nextInt(0, WIDTH);
+            int y = appleGen.nextInt(0, HEIGHT);
+            appleLoc = new Point(x, y);
+        }while (snake.contains(appleLoc));
     }
-    private boolean detectCollision() {
-        return false;
+    private boolean detectCollision(Point head,boolean ate) {
+        List<Point> tempSnake=snake;
+        if(!ate)
+            tempSnake=snake.subList(0,snake.size()-1);
+        return tempSnake.contains(head);
     }
 
     @Override

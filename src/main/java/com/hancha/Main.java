@@ -11,6 +11,8 @@ public class Main extends JFrame {
         add(pane);
         pack();
 
+        pane.requestFocusInWindow();
+
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
     }
