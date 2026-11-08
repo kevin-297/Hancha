@@ -63,4 +63,4 @@ Gameplay constants are defined at the top of `Pane.java`:
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE.md](LICENSE.md) for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
